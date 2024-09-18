@@ -22,6 +22,14 @@ TreeBandAudioProcessor::TreeBandAudioProcessor()
                        )
 #endif
 {
+    threshold = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter("Threshold"));
+    jassert(threshold != nullptr);
+    attack = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter("Attack"));
+    jassert(attack != nullptr);
+    release = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter("Release"));
+    jassert(release != nullptr);
+    ratio = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter("Ratio"));
+    jassert(ratio != nullptr);
 }
 
 TreeBandAudioProcessor::~TreeBandAudioProcessor()
@@ -95,6 +103,14 @@ void TreeBandAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+    
+    juce::dsp::ProcessSpec spec;
+    spec.maximumBlockSize = samplesPerBlock;
+    spec.numChannels = getTotalNumOutputChannels();
+    spec.sampleRate = sampleRate;
+    
+    compressor.prepare(spec);
+    
 }
 
 void TreeBandAudioProcessor::releaseResources()
@@ -143,19 +159,16 @@ void TreeBandAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
+    
+    compressor.setThreshold(threshold->get());
+    compressor.setAttack(attack->get());
+    compressor.setRelease(release->get());
+    compressor.setRatio(ratio->getCurrentChoiceName().getFloatValue());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
-    }
+    auto block = juce::dsp::AudioBlock<float>(buffer);
+    auto context = juce::dsp::ProcessContextReplacing<float>(block);
+    compressor.process(context);
+    
 }
 
 //==============================================================================
@@ -166,7 +179,8 @@ bool TreeBandAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* TreeBandAudioProcessor::createEditor()
 {
-    return new TreeBandAudioProcessorEditor (*this);
+//    return new TreeBandAudioProcessorEditor (*this);
+    return new juce::GenericAudioProcessorEditor (*this);
 }
 
 //==============================================================================
@@ -175,12 +189,59 @@ void TreeBandAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+    
+    juce::MemoryOutputStream mos(destData, true);
+    apvts.state.writeToStream(mos);
+    
 }
 
 void TreeBandAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+    
+    auto tree = juce::ValueTree::readFromData(data, sizeInBytes);
+    if (tree.isValid())
+    {
+        apvts.replaceState(tree);
+    }
+    
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout TreeBandAudioProcessor::createParameterLayout()
+{
+    APVTS::ParameterLayout layout;
+    
+    using namespace juce;
+    
+    layout.add(std::make_unique<AudioParameterFloat>("Threshold",
+                                                     "Threshold",
+                                                     NormalisableRange<float>(-60, 12, 1, 1),
+                                                     0));
+//    range vals in ms
+    auto attackReleaseRange = NormalisableRange<float>(1, 1200, 1, 1);
+    layout.add(std::make_unique<AudioParameterFloat>("Attack",
+                                                      "Attack",
+                                                      attackReleaseRange,
+                                                      120));
+    layout.add(std::make_unique<AudioParameterFloat>("Release",
+                                                      "Release",
+                                                      attackReleaseRange,
+                                                      60));
+//    ratios
+    auto choices = std::vector<double>{1, 1.5, 2, 3, 4, 6, 8, 10, 15, 20, 50, 100};
+    juce::StringArray stringArray;
+    for (auto choice : choices)
+    {
+        stringArray.add(juce::String(choice, 1));
+    }
+
+    layout.add(std::make_unique<AudioParameterChoice>("Ratio",
+                                                       "Ratio",
+                                                       stringArray,
+                                                       3));
+    
+    return layout;
 }
 
 //==============================================================================
