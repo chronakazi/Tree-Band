@@ -4,7 +4,7 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" version="0.1.0"
               companyName="FOEsoft" companyCopyright="&#169;2024" companyEmail="admin@foesoft.com"
               pluginFormats="buildAAX,buildVST3" pluginVST3Category="Dynamics,Fx"
-              pluginAAXCategory="2">
+              pluginAAXCategory="2" pluginAUMainType="'aufx'">
   <MAINGROUP id="S2KQqM" name="Tree Band">
     <GROUP id="{FA7E2E1A-6ECB-78C8-342A-43615B4C697C}" name="Source">
       <FILE id="ZXHk4B" name="PluginProcessor.cpp" compile="1" resource="0"
