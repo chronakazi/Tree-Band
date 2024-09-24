@@ -21,7 +21,12 @@ TreeBandAudioProcessor::TreeBandAudioProcessor()
                      #endif
                        )
 #endif
+
 {
+#if PERFETTO
+    MelatoninPerfetto::get().beginSession();
+#endif
+    
     using namespace Params;
     const auto& params = GetParams();
     
@@ -75,6 +80,9 @@ TreeBandAudioProcessor::TreeBandAudioProcessor()
 
 TreeBandAudioProcessor::~TreeBandAudioProcessor()
 {
+#if PERFETTO
+    MelatoninPerfetto::get().endSession();
+#endif
 }
 
 //==============================================================================
@@ -204,6 +212,8 @@ bool TreeBandAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 
 void TreeBandAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    TRACE_DSP();
+    
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();

@@ -25,6 +25,7 @@ TreeBandAudioProcessorEditor::~TreeBandAudioProcessorEditor()
 //==============================================================================
 void TreeBandAudioProcessorEditor::paint (juce::Graphics& g)
 {
+    TRACE_COMPONENT();
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
