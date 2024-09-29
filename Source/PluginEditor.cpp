@@ -28,7 +28,7 @@ TreeBandAudioProcessorEditor::TreeBandAudioProcessorEditor (TreeBandAudioProcess
     
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (600, 600);
+    setSize (800, 650);
 }
 
 TreeBandAudioProcessorEditor::~TreeBandAudioProcessorEditor()
@@ -44,7 +44,7 @@ void TreeBandAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour (juce::Colours::white);
     g.setFont (juce::FontOptions (15.0f));
-    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
+    g.drawText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
 }
 
 void TreeBandAudioProcessorEditor::resized()
@@ -52,6 +52,8 @@ void TreeBandAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
     auto area = getLocalBounds();
-    area.removeFromBottom(50);
-    inspectButton.setBounds (getLocalBounds().withSizeKeepingCentre(100, 50));
+    auto inspectButtonArea = area.removeFromTop(50);
+    
+    inspectButton.setBounds (inspectButtonArea);
+
 }

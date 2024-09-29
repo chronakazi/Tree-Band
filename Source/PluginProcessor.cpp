@@ -354,8 +354,8 @@ bool TreeBandAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* TreeBandAudioProcessor::createEditor()
 {
-//    return new TreeBandAudioProcessorEditor (*this);
-    return new juce::GenericAudioProcessorEditor (*this);
+    return new TreeBandAudioProcessorEditor (*this);
+//    return new juce::GenericAudioProcessorEditor (*this);
 }
 
 //==============================================================================
