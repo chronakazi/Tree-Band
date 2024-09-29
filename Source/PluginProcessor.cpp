@@ -55,6 +55,9 @@ TreeBandAudioProcessor::TreeBandAudioProcessor()
     LP2.setType(juce::dsp::LinkwitzRileyFilterType::lowpass);
     HP2.setType(juce::dsp::LinkwitzRileyFilterType::highpass);
     
+    floatHelper(inputGainParam,         Names::Gain_In);
+    floatHelper(outputGainParam,        Names::Gain_Out);
+    
     floatHelper(lowMidCrossover,        Names::Low_Mid_Crossover_Freq);
     floatHelper(midHighCrossover,       Names::Mid_High_Crossover_Freq);
     
@@ -177,6 +180,12 @@ void TreeBandAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     LP2.prepare(spec);
     HP2.prepare(spec);
     
+    inputGain.prepare(spec);
+    outputGain.prepare(spec);
+    
+    inputGain.setRampDurationSeconds(0.01); //10ms
+    outputGain.setRampDurationSeconds(0.01);
+    
     for (auto& buffer : filterBuffers)
     {
         buffer.setSize(spec.numChannels, samplesPerBlock);
@@ -216,6 +225,49 @@ bool TreeBandAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 }
 #endif
 
+void TreeBandAudioProcessor::updateState()
+{
+    for (auto& compressor : compressors)
+        compressor.updateCompressorSettings();
+    
+    inputGain.setGainDecibels(inputGainParam->get());
+    
+    auto lowMidCutoff = lowMidCrossover->get();
+    LP1.setCutoffFrequency(lowMidCutoff);
+    HP1.setCutoffFrequency(lowMidCutoff);
+    
+    auto midHighCutoff = midHighCrossover->get();
+    AP2.setCutoffFrequency(midHighCutoff);
+    LP2.setCutoffFrequency(midHighCutoff);
+    HP2.setCutoffFrequency(midHighCutoff);
+    
+    outputGain.setGainDecibels(outputGainParam->get());
+}
+
+void TreeBandAudioProcessor::splitBands(const juce::AudioBuffer<float> &inputBuffer)
+{
+    for (auto& fb : filterBuffers)
+    {
+        fb = inputBuffer;
+    }
+    
+    auto fb0Block = juce::dsp::AudioBlock<float>(filterBuffers[0]);
+    auto fb1Block = juce::dsp::AudioBlock<float>(filterBuffers[1]);
+    auto fb2Block = juce::dsp::AudioBlock<float>(filterBuffers[2]);
+    
+    auto fb0Ctx = juce::dsp::ProcessContextReplacing<float>(fb0Block);
+    auto fb1Ctx = juce::dsp::ProcessContextReplacing<float>(fb1Block);
+    auto fb2Ctx = juce::dsp::ProcessContextReplacing<float>(fb2Block);
+    
+    LP1.process(fb0Ctx);
+    AP2.process(fb0Ctx);
+    
+    HP1.process(fb1Ctx);
+    filterBuffers[2] = filterBuffers[1];
+    LP2.process(fb1Ctx);
+    HP2.process(fb2Ctx);
+}
+
 void TreeBandAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     TRACE_DSP();
@@ -233,41 +285,11 @@ void TreeBandAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
     
-    for (auto& compressor : compressors)
-    {
-        compressor.updateCompressorSettings();
-        //    compressor.process(buffer);
-    }
+    updateState();
     
-    for (auto& fb : filterBuffers)
-    {
-        fb = buffer;
-    }
+    applyGain(buffer, inputGain);
     
-    auto lowMidCutoff = lowMidCrossover->get();
-    LP1.setCutoffFrequency(lowMidCutoff);
-    HP1.setCutoffFrequency(lowMidCutoff);
-    
-    auto midHighCutoff = midHighCrossover->get();
-    AP2.setCutoffFrequency(midHighCutoff);
-    LP2.setCutoffFrequency(midHighCutoff);
-    HP2.setCutoffFrequency(midHighCutoff);
-    
-    auto fb0Block = juce::dsp::AudioBlock<float>(filterBuffers[0]);
-    auto fb1Block = juce::dsp::AudioBlock<float>(filterBuffers[1]);
-    auto fb2Block = juce::dsp::AudioBlock<float>(filterBuffers[2]);
-    
-    auto fb0Ctx = juce::dsp::ProcessContextReplacing<float>(fb0Block);
-    auto fb1Ctx = juce::dsp::ProcessContextReplacing<float>(fb1Block);
-    auto fb2Ctx = juce::dsp::ProcessContextReplacing<float>(fb2Block);
-    
-    LP1.process(fb0Ctx);
-    AP2.process(fb0Ctx);
-    
-    HP1.process(fb1Ctx);
-    filterBuffers[2] = filterBuffers[1];
-    LP2.process(fb1Ctx);
-    HP2.process(fb2Ctx);
+    splitBands(buffer);
     
     for (size_t i = 0; i < filterBuffers.size(); ++i)
     {
@@ -320,9 +342,7 @@ void TreeBandAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         }
     }
     
-//    addFilterBand(buffer, filterBuffers[0]);
-//    addFilterBand(buffer, filterBuffers[1]);
-//    addFilterBand(buffer, filterBuffers[2]);
+    applyGain(buffer, outputGain);
     
 }
 
@@ -371,20 +391,33 @@ juce::AudioProcessorValueTreeState::ParameterLayout TreeBandAudioProcessor::crea
     using namespace Params;
     const auto& params = GetParams();
     
+//    Gains
+    auto gainRange = NormalisableRange<float>(-24, 24, 0.1, 1);
+    layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Gain_In),
+                                                      params.at(Names::Gain_In),
+                                                      gainRange,
+                                                      0));
+    layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Gain_Out),
+                                                      params.at(Names::Gain_Out),
+                                                      gainRange,
+                                                      0));
+    
+//    Tresholds
+    auto thresholdRange = NormalisableRange<float>(-60, 12, 1, 1);
     layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Threshold_Low_Band),
                                                       params.at(Names::Threshold_Low_Band),
-                                                      NormalisableRange<float>(-60, 12, 1, 1),
+                                                      thresholdRange,
                                                       0));
     layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Threshold_Mid_Band),
                                                       params.at(Names::Threshold_Mid_Band),
-                                                      NormalisableRange<float>(-60, 12, 1, 1),
+                                                      thresholdRange,
                                                       0));
     layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Threshold_High_Band),
                                                       params.at(Names::Threshold_High_Band),
-                                                      NormalisableRange<float>(-60, 12, 1, 1),
+                                                      thresholdRange,
                                                       0));
     
-//    range vals in ms
+//    Attack and Release range vals in ms
     auto attackReleaseRange = NormalisableRange<float>(1, 1200, 1, 1);
     layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Attack_Low_Band),
                                                       params.at(Names::Attack_Low_Band),
@@ -433,6 +466,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout TreeBandAudioProcessor::crea
                                                        stringArray,
                                                        3));
     
+//    Bypass
     layout.add(std::make_unique<AudioParameterBool>(params.at(Names::Bypassed_Low_Band),
                                                      params.at(Names::Bypassed_Low_Band),
                                                      false));
@@ -443,6 +477,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout TreeBandAudioProcessor::crea
                                                      params.at(Names::Bypassed_High_Band),
                                                      false));
     
+//    Mute
     layout.add(std::make_unique<AudioParameterBool>(params.at(Names::Mute_Low_Band),
                                                      params.at(Names::Mute_Low_Band),
                                                      false));
@@ -453,6 +488,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout TreeBandAudioProcessor::crea
                                                      params.at(Names::Mute_High_Band),
                                                      false));
     
+//    Solo
     layout.add(std::make_unique<AudioParameterBool>(params.at(Names::Solo_Low_Band),
                                                      params.at(Names::Solo_Low_Band),
                                                      false));
@@ -463,11 +499,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout TreeBandAudioProcessor::crea
                                                      params.at(Names::Solo_High_Band),
                                                      false));
     
+//    Crossovers
     layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Low_Mid_Crossover_Freq),
                                                       params.at(Names::Low_Mid_Crossover_Freq),
                                                       NormalisableRange<float>(20, 999, 1, 1),
                                                       500));
-    
     layout.add(std::make_unique<AudioParameterFloat>(params.at(Names::Mid_High_Crossover_Freq),
                                                       params.at(Names::Mid_High_Crossover_Freq),
                                                       NormalisableRange<float>(1000, 20000, 1, 1),
