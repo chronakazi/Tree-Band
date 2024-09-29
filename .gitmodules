@@ -2,3 +2,11 @@
 	path = modules/melatonin_perfetto
 	url = https://github.com/sudara/melatonin_perfetto.git
 	branch = main
+[submodule "modules/melatonin_inspector"]
+	path = modules/melatonin_inspector
+	url = https://github.com/sudara/melatonin_inspector.git
+	branch = main
+[submodule "modules/melatonin_blur"]
+	path = modules/melatonin_blur
+	url = https://github.com/sudara/melatonin_blur.git
+	branch = main

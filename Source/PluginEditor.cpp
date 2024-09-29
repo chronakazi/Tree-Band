@@ -13,6 +13,19 @@
 TreeBandAudioProcessorEditor::TreeBandAudioProcessorEditor (TreeBandAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
+    
+    addAndMakeVisible (inspectButton);
+    
+    inspectButton.onClick = [&] {
+            if (!inspector)
+            {
+                inspector = std::make_unique<melatonin::Inspector> (*this);
+                inspector->onClose = [this]() { inspector.reset(); };
+            }
+
+            inspector->setVisible (true);
+        };
+    
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize (600, 600);
@@ -38,4 +51,7 @@ void TreeBandAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
+    auto area = getLocalBounds();
+    area.removeFromBottom(50);
+    inspectButton.setBounds (getLocalBounds().withSizeKeepingCentre(100, 50));
 }
