@@ -3,7 +3,7 @@
 <JUCERPROJECT id="eUQFJn" name="Tree Band" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" version="0.1.0"
               companyName="FOEsoft" companyCopyright="&#169;2024" companyEmail="admin@foesoft.com"
-              pluginFormats="buildAAX,buildVST3" pluginVST3Category="Dynamics,Fx"
+              pluginFormats="buildAAX,buildStandalone,buildVST3" pluginVST3Category="Dynamics,Fx"
               pluginAAXCategory="2" pluginAUMainType="'aufx'" headerPath="$(HOME)/code/perfetto/sdk"
               pluginManufacturerCode="Foes">
   <MAINGROUP id="S2KQqM" name="Tree Band">
