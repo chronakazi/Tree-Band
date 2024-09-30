@@ -9,6 +9,12 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+Placeholder::Placeholder()
+{
+    juce::Random r;
+    customColor = juce::Colour(r.nextInt(255), r.nextInt(255), r.nextInt(255));
+}
+
 //==============================================================================
 TreeBandAudioProcessorEditor::TreeBandAudioProcessorEditor (TreeBandAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
@@ -25,6 +31,11 @@ TreeBandAudioProcessorEditor::TreeBandAudioProcessorEditor (TreeBandAudioProcess
 
             inspector->setVisible (true);
         };
+    
+    addAndMakeVisible(controlBar);
+    addAndMakeVisible(analyzer);
+    addAndMakeVisible(globalControls);
+    addAndMakeVisible(bandControls);
     
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -52,8 +63,16 @@ void TreeBandAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
     auto area = getLocalBounds();
-    auto inspectButtonArea = area.removeFromTop(50);
+    auto inspectButtonArea = area.removeFromBottom(50);
     
     inspectButton.setBounds (inspectButtonArea);
 
+    controlBar.setBounds(area.removeFromTop(50));
+    
+    analyzer.setBounds(area.removeFromTop(275));
+    
+    globalControls.setBounds(area.removeFromTop(125));
+    
+    bandControls.setBounds(area.removeFromBottom(150));
+    
 }
