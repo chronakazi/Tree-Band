@@ -43,8 +43,8 @@
     <XCODE_MAC targetFolder="Builds/MacOSX" extraDefs="PERFETTO=0" applicationCategory="public.app-category.music">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="Tree Band" enablePluginBinaryCopyStep="0"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="Tree Band" vst3BinaryLocation="$(HOME)/code/foesoft/release-builds/vst3"
-                       auBinaryLocation="$(HOME)/code/foesoft/release-builds/AAX" aaxBinaryLocation="$(HOME)/code/foesoft/release-builds/aax"
+        <CONFIGURATION isDebug="0" name="Release" targetName="Tree Band" vst3BinaryLocation="$(HOME)/code/foesoft/release-builds/tree-band/vst3"
+                       auBinaryLocation="$(HOME)/code/foesoft/release-builds/AAX" aaxBinaryLocation="$(HOME)/code/foesoft/release-builds/tree-band/aax"
                        enablePluginBinaryCopyStep="0"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
