@@ -175,9 +175,16 @@ private:
     
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     std::unique_ptr<Attachment> thresholdSliderAttachment,
-                                 ratioSliderAttachment,
-                                 attackSliderAttachment,
-                                 releaseSliderAttachment;
+                                ratioSliderAttachment,
+                                attackSliderAttachment,
+                                releaseSliderAttachment;
+    
+    juce::ToggleButton bypassButton, soloButton, muteButton, lowBand, midBand, highBand;
+    
+    using BtnAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
+    std::unique_ptr<BtnAttachment> bypassButtonAttachment,
+                                    soloButtonAttachment,
+                                    muteButtonAttachment;
 };
 
 struct GlobalControls : juce::Component

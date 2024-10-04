@@ -153,6 +153,24 @@ void LookAndFeel::drawToggleButton(juce::Graphics &g,
         
         g.strokePath(analyzerButton->randomPath, PathStrokeType(1.f));
     }
+    else
+    {
+        auto bounds = toggleButton.getLocalBounds().reduced(3);
+        
+        auto buttonIsOn = toggleButton.getToggleState();
+        
+        const int cornerSize = 4;
+        
+//        button color
+        g.setColour(buttonIsOn ? juce::Colour(ColorPalette::Accent) : juce::Colour(ColorPalette::Secondary));
+        g.fillRoundedRectangle(bounds.toFloat(), cornerSize);
+        
+//        button text color
+        g.setColour(buttonIsOn ? juce::Colour(ColorPalette::Tertiary) : juce::Colour(ColorPalette::Accent));
+        g.drawRoundedRectangle(bounds.toFloat(), cornerSize, 1);
+        g.drawText(toggleButton.getName(), bounds, juce::Justification::centred, 1);
+        
+    }
 }
 
 //====================================================================================
@@ -244,15 +262,10 @@ juce::String RotarySliderWithLabels::getDisplayString() const
     if (auto* floatParam = dynamic_cast<juce::AudioParameterFloat*>(param))
     {
         float val = getValue();
-//        if (val > 999.f)
-//        {
-//            val /= 1000.f;
-//            addK = true;
-//        }
         
         addK = truncateKiloValue(val);
         
-//        TODO Fix str skipping -0.1
+//        TODO Fix threshold str skipping -0.1
         if (abs(val) < 0.1f)
         {
             val = 0;
@@ -378,6 +391,31 @@ ratioSlider(nullptr, "")
     addAndMakeVisible(ratioSlider);
     addAndMakeVisible(attackSlider);
     addAndMakeVisible(releaseSlider);
+    
+    bypassButton.setName("X");
+    soloButton.setName("S");
+    muteButton.setName("M");
+    
+    makeAttachmentHelper(bypassButtonAttachment, Names::Bypassed_Mid_Band, bypassButton);
+    makeAttachmentHelper(soloButtonAttachment, Names::Solo_Mid_Band, soloButton);
+    makeAttachmentHelper(muteButtonAttachment, Names::Mute_Mid_Band, muteButton);
+    
+    addAndMakeVisible(bypassButton);
+    addAndMakeVisible(soloButton);
+    addAndMakeVisible(muteButton);
+    
+    lowBand.setName("L");
+    midBand.setName("M");
+    highBand.setName("H");
+    
+    lowBand.setRadioGroupId(1);
+    midBand.setRadioGroupId(1);
+    highBand.setRadioGroupId(1);
+    
+    addAndMakeVisible(lowBand);
+    addAndMakeVisible(midBand);
+    addAndMakeVisible(highBand);
+    
 }
 
 void CompressorBandControls::resized()
@@ -386,17 +424,46 @@ void CompressorBandControls::resized()
     
     auto bounds = getLocalBounds();
     
+    auto createBandButtonControlBox = [](std::vector<Component*> comps)
+    {
+        FlexBox flexBox;
+        flexBox.flexDirection = FlexBox::Direction::column;
+        flexBox.flexWrap = FlexBox::Wrap::noWrap;
+        
+        auto spacer = FlexItem().withHeight(4);
+        
+        for (auto* comp : comps)
+        {
+            flexBox.items.add(spacer);
+            flexBox.items.add(FlexItem(*comp).withFlex(1.0f));
+        }
+        
+        flexBox.items.add(spacer);
+        
+        return flexBox;
+    };
+    
+    auto bandButtonControlBox = createBandButtonControlBox({&bypassButton, &soloButton, &muteButton});
+    
+    auto bandSelectControlBox = createBandButtonControlBox({&lowBand, &midBand, &highBand});
+    
     FlexBox flexBox;
     flexBox.flexDirection = FlexBox::Direction::row;
     flexBox.flexWrap = FlexBox::Wrap::noWrap;
     
-    auto endCap = FlexItem().withWidth(32);
+    auto endCap = FlexItem().withWidth(7);
+    auto spacer = FlexItem().withWidth(4);
     
     flexBox.items.add(endCap);
+    flexBox.items.add(FlexItem(bandSelectControlBox).withWidth(30));
+    flexBox.items.add(spacer);
     flexBox.items.add(FlexItem(thresholdSlider).withFlex(1.0f));
     flexBox.items.add(FlexItem(ratioSlider).withFlex(1.0f));
     flexBox.items.add(FlexItem(attackSlider).withFlex(1.0f));
     flexBox.items.add(FlexItem(releaseSlider).withFlex(1.0f));
+//    flexBox.items.add(endCap);
+    flexBox.items.add(spacer);
+    flexBox.items.add(FlexItem(bandButtonControlBox).withWidth(30));
     flexBox.items.add(endCap);
     
     flexBox.performLayout(bounds);
@@ -477,8 +544,8 @@ void GlobalControls::resized()
     flexBox.flexDirection = FlexBox::Direction::row;
     flexBox.flexWrap = FlexBox::Wrap::noWrap;
     
-    auto spacer = FlexItem().withWidth(32);
-    auto endCap = FlexItem().withWidth(32);
+    auto spacer = FlexItem().withWidth(0);
+    auto endCap = FlexItem().withWidth(0);
     
     flexBox.items.add(endCap);
     flexBox.items.add(FlexItem(*inGainSlider).withFlex(1.0f));
