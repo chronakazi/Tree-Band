@@ -55,7 +55,7 @@ void LookAndFeel::drawRotarySlider(juce::Graphics & g,
     auto enabled = slider.isEnabled();
     
 //    Rotary slider bg color
-    g.setColour(enabled ? Colour(ColorPalette::Accent) : Colour(ColorPalette::Secondary));
+    g.setColour(enabled ? Colour(ColorPalette::Accent) : Colours::dimgrey);
     g.fillEllipse(bounds);
     
 //    Rotary slider border color.
@@ -92,10 +92,10 @@ void LookAndFeel::drawRotarySlider(juce::Graphics & g,
         r.setSize(strWidth + 4, rswl->getTextHeight() + 2);
         r.setCentre(bounds.getCentre());
         
-        g.setColour(enabled ? Colour(ColorPalette::Accent) : Colour(ColorPalette::Secondary));
+        g.setColour(enabled ? Colour(ColorPalette::Accent) : Colours::dimgrey);
         g.fillRect(r);
         
-        g.setColour(enabled ? Colour(ColorPalette::Primary) : Colour(ColorPalette::Accent));
+        g.setColour(enabled ? Colour(ColorPalette::Primary) : Colour(ColorPalette::Tertiary));
         g.drawFittedText(text, r.toNearestInt(), juce::Justification::centred, 1);
     }
 
@@ -345,61 +345,18 @@ attackSlider(nullptr, "ms", "ATTACK"),
 releaseSlider(nullptr, "ms", "RELEASE"),
 ratioSlider(nullptr, "")
 {
-//    using namespace Params;
-//    const auto& params = GetParams();
-//    
-//    auto getParamHelper = [&apvts = this->apvts, &params](const auto& name) -> auto&
-//    {
-//        return getParam(apvts, params, name);
-//    };
-//    
-//    thresholdSlider.changeParam(&getParamHelper(Names::Threshold_Mid_Band));
-//    ratioSlider.changeParam(&getParamHelper(Names::Ratio_Mid_Band));
-//    attackSlider.changeParam(&getParamHelper(Names::Attack_Mid_Band));
-//    releaseSlider.changeParam(&getParamHelper(Names::Release_Mid_Band));
-//    
-//    addLabelPairs(thresholdSlider.labels, getParamHelper(Names::Threshold_Mid_Band), "dB");
-//    addLabelPairs(attackSlider.labels, getParamHelper(Names::Attack_Mid_Band), "ms");
-//    addLabelPairs(releaseSlider.labels, getParamHelper(Names::Release_Mid_Band), "ms");
-//    
-//    ratioSlider.labels.clear();
-//    ratioSlider.labels.add({0.0f, "1:1"});
-//    auto ratioParam = dynamic_cast<juce::AudioParameterChoice*>(&getParamHelper(Names::Ratio_Mid_Band));
-//    ratioSlider.labels.add({1.0f,
-//        juce::String(ratioParam->choices.getReference(ratioParam->choices.size() - 1).getIntValue()) + ":1"});
-    
-//    auto makeAttachmentHelper = [&apvts = this->apvts, &params](auto& attachment,
-//                                                  const auto& name,
-//                                                  auto& slider)
-//    {
-//        makeAttachment(attachment, apvts, params, name, slider);
-//    };
-//    
-//    makeAttachmentHelper(thresholdSliderAttachment,
-//                         Names::Threshold_Mid_Band,
-//                         thresholdSlider);
-//    makeAttachmentHelper(ratioSliderAttachment,
-//                         Names::Ratio_Mid_Band,
-//                         ratioSlider);
-//    makeAttachmentHelper(attackSliderAttachment,
-//                         Names::Attack_Mid_Band,
-//                         attackSlider);
-//    makeAttachmentHelper(releaseSliderAttachment,
-//                         Names::Release_Mid_Band,
-//                         releaseSlider);
-    
     addAndMakeVisible(thresholdSlider);
     addAndMakeVisible(ratioSlider);
     addAndMakeVisible(attackSlider);
     addAndMakeVisible(releaseSlider);
     
+    bypassButton.addListener(this);
+    soloButton.addListener(this);
+    muteButton.addListener(this);
+    
     bypassButton.setName("X");
     soloButton.setName("S");
     muteButton.setName("M");
-    
-//    makeAttachmentHelper(bypassButtonAttachment, Names::Bypassed_Mid_Band, bypassButton);
-//    makeAttachmentHelper(soloButtonAttachment, Names::Solo_Mid_Band, soloButton);
-//    makeAttachmentHelper(muteButtonAttachment, Names::Mute_Mid_Band, muteButton);
     
     addAndMakeVisible(bypassButton);
     addAndMakeVisible(soloButton);
@@ -432,6 +389,13 @@ ratioSlider(nullptr, "")
     addAndMakeVisible(midBand);
     addAndMakeVisible(highBand);
     
+}
+
+CompressorBandControls::~CompressorBandControls()
+{
+    bypassButton.removeListener(this);
+    soloButton.removeListener(this);
+    muteButton.removeListener(this);
 }
 
 void CompressorBandControls::resized()
@@ -489,6 +453,40 @@ void CompressorBandControls::paint(juce::Graphics &g)
 {
     auto bounds = getLocalBounds();
     drawModuleBackground(g, bounds);
+}
+
+void CompressorBandControls::buttonClicked(juce::Button *button)
+{
+    updateSliderEnablements();
+    updateSoloMuteBypassToggleStates(*button);
+}
+
+void CompressorBandControls::updateSliderEnablements()
+{
+    auto disabled = muteButton.getToggleState() || bypassButton.getToggleState();
+    thresholdSlider.setEnabled(!disabled);
+    ratioSlider.setEnabled(!disabled);
+    attackSlider.setEnabled(!disabled);
+    releaseSlider.setEnabled(!disabled);
+}
+
+void CompressorBandControls::updateSoloMuteBypassToggleStates(juce::Button &clickedButton)
+{
+    if (&clickedButton == &bypassButton && bypassButton.getToggleState())
+    {
+        soloButton.setToggleState(false, juce::NotificationType::sendNotification);
+        muteButton.setToggleState(false, juce::NotificationType::sendNotification);
+    }
+    else if (&clickedButton == &soloButton && soloButton.getToggleState())
+    {
+        bypassButton.setToggleState(false, juce::NotificationType::sendNotification);
+        muteButton.setToggleState(false, juce::NotificationType::sendNotification);
+    }
+    else if (&clickedButton == &muteButton && muteButton.getToggleState())
+    {
+        bypassButton.setToggleState(false, juce::NotificationType::sendNotification);
+        soloButton.setToggleState(false, juce::NotificationType::sendNotification);
+    }
 }
 
 void CompressorBandControls::updateAttachments()
