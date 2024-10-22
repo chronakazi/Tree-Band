@@ -7,14 +7,47 @@
               pluginAAXCategory="2" pluginAUMainType="'aufx'" headerPath="$(HOME)/code/perfetto/sdk"
               pluginManufacturerCode="Foes">
   <MAINGROUP id="S2KQqM" name="Tree Band">
-    <GROUP id="{FA7E2E1A-6ECB-78C8-342A-43615B4C697C}" name="Source">
-      <FILE id="ZXHk4B" name="PluginProcessor.cpp" compile="1" resource="0"
-            file="Source/PluginProcessor.cpp"/>
-      <FILE id="R9MJTT" name="PluginProcessor.h" compile="0" resource="0"
-            file="Source/PluginProcessor.h"/>
-      <FILE id="rgWi8p" name="PluginEditor.cpp" compile="1" resource="0"
+    <GROUP id="{BF078666-5BC7-2FA3-DED7-8CCE8331EA02}" name="Source">
+      <GROUP id="{34226FCE-8977-ACAD-CFF0-35EFC3BDC2DB}" name="dsp">
+        <FILE id="rGbC7R" name="CompressorBand.cpp" compile="1" resource="0"
+              file="Source/dsp/CompressorBand.cpp"/>
+        <FILE id="BZFbLr" name="CompressorBand.h" compile="0" resource="0"
+              file="Source/dsp/CompressorBand.h"/>
+        <FILE id="PAFIX8" name="Params.cpp" compile="1" resource="0" file="Source/dsp/Params.cpp"/>
+        <FILE id="Suhd6x" name="Params.h" compile="0" resource="0" file="Source/dsp/Params.h"/>
+      </GROUP>
+      <GROUP id="{BDE62729-4A8A-C807-7C58-0903832E9829}" name="gui">
+        <FILE id="vkCEzf" name="CompressorBandControls.cpp" compile="1" resource="0"
+              file="Source/gui/CompressorBandControls.cpp"/>
+        <FILE id="YNDGQ5" name="CompressorBandControls.h" compile="0" resource="0"
+              file="Source/gui/CompressorBandControls.h"/>
+        <FILE id="o0orIQ" name="CustomButtons.cpp" compile="1" resource="0"
+              file="Source/gui/CustomButtons.cpp"/>
+        <FILE id="yNJkNt" name="CustomButtons.h" compile="0" resource="0" file="Source/gui/CustomButtons.h"/>
+        <FILE id="RDy9Xf" name="GlobalControls.cpp" compile="1" resource="0"
+              file="Source/gui/GlobalControls.cpp"/>
+        <FILE id="ece0mt" name="GlobalControls.h" compile="0" resource="0"
+              file="Source/gui/GlobalControls.h"/>
+        <FILE id="SfZVcz" name="LookAndFeel.cpp" compile="1" resource="0" file="Source/gui/LookAndFeel.cpp"/>
+        <FILE id="SC9nFU" name="LookAndFeel.h" compile="0" resource="0" file="Source/gui/LookAndFeel.h"/>
+        <FILE id="TKfjco" name="RotarySliderWithLabels.cpp" compile="1" resource="0"
+              file="Source/gui/RotarySliderWithLabels.cpp"/>
+        <FILE id="HWUwep" name="RotarySliderWithLabels.h" compile="0" resource="0"
+              file="Source/gui/RotarySliderWithLabels.h"/>
+        <FILE id="ylO5RF" name="Utilities.cpp" compile="1" resource="0" file="Source/gui/Utilities.cpp"/>
+        <FILE id="juIzJR" name="Utilities.h" compile="0" resource="0" file="Source/gui/Utilities.h"/>
+        <FILE id="FL2ZeO" name="UtilityComponents.cpp" compile="1" resource="0"
+              file="Source/gui/UtilityComponents.cpp"/>
+        <FILE id="w5E4ax" name="UtilityComponents.h" compile="0" resource="0"
+              file="Source/gui/UtilityComponents.h"/>
+      </GROUP>
+      <FILE id="Vl2YUx" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
-      <FILE id="KLqnRm" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="CfQmSj" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="RF84xX" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="ez1n3K" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/PluginProcessor.h"/>
     </GROUP>
     <FILE id="hI9ntL" name="perfetto.cc" compile="1" resource="0" file="../../perfetto/sdk/perfetto.cc"/>
     <FILE id="xgsm3z" name="perfetto.h" compile="0" resource="0" file="../../perfetto/sdk/perfetto.h"/>
