@@ -11,6 +11,7 @@
 #include "CompressorBandControls.h"
 #include "../dsp/Params.h"
 #include "Utilities.h"
+#include "../PluginEditor.h"
 
 CompressorBandControls::CompressorBandControls(juce::AudioProcessorValueTreeState& apv) :
 apvts(apv),
@@ -32,6 +33,15 @@ ratioSlider(nullptr, "")
     soloButton.setName("S");
     muteButton.setName("M");
     
+    bypassButton.setColour(juce::TextButton::ColourIds::buttonOnColourId, juce::Colours::yellow);
+    bypassButton.setColour(juce::TextButton::ColourIds::buttonColourId, juce::Colours::black);
+    
+    soloButton.setColour(juce::TextButton::ColourIds::buttonOnColourId, juce::Colours::limegreen);
+    soloButton.setColour(juce::TextButton::ColourIds::buttonColourId, juce::Colours::black);
+    
+    muteButton.setColour(juce::TextButton::ColourIds::buttonOnColourId, juce::Colours::red);
+    muteButton.setColour(juce::TextButton::ColourIds::buttonColourId, juce::Colours::black);
+    
     addAndMakeVisible(bypassButton);
     addAndMakeVisible(soloButton);
     addAndMakeVisible(muteButton);
@@ -39,6 +49,15 @@ ratioSlider(nullptr, "")
     lowBand.setName("L");
     midBand.setName("M");
     highBand.setName("H");
+    
+    lowBand.setColour(juce::TextButton::ColourIds::buttonOnColourId, juce::Colour(ColorPalette::Accent));
+    lowBand.setColour(juce::TextButton::ColourIds::buttonColourId, juce::Colour(ColorPalette::Secondary));
+    
+    midBand.setColour(juce::TextButton::ColourIds::buttonOnColourId, juce::Colour(ColorPalette::Accent));
+    midBand.setColour(juce::TextButton::ColourIds::buttonColourId, juce::Colour(ColorPalette::Secondary));
+    
+    highBand.setColour(juce::TextButton::ColourIds::buttonOnColourId, juce::Colour(ColorPalette::Accent));
+    highBand.setColour(juce::TextButton::ColourIds::buttonColourId, juce::Colour(ColorPalette::Secondary));
     
     lowBand.setRadioGroupId(1);
     midBand.setRadioGroupId(1);
@@ -57,7 +76,11 @@ ratioSlider(nullptr, "")
     highBand.onClick = buttonSwitcher;
     
     lowBand.setToggleState(true, juce::NotificationType::dontSendNotification);
+    
     updateAttachments();
+    updateSliderEnablements();
+    updateBandSelectButtonStates();
+    
     
     addAndMakeVisible(lowBand);
     addAndMakeVisible(midBand);
@@ -133,6 +156,81 @@ void CompressorBandControls::buttonClicked(juce::Button *button)
 {
     updateSliderEnablements();
     updateSoloMuteBypassToggleStates(*button);
+    updateActiveBandFillColors(*button);
+}
+
+void CompressorBandControls::updateActiveBandFillColors(juce::Button& clickedButton)
+{
+    jassert(activeBand != nullptr);
+    
+    if (clickedButton.getToggleState() == false)
+    {
+        resetActiveBandColors();
+    }
+    else
+    {
+        refreshBandButtonColors(*activeBand, clickedButton);
+    }
+}
+
+void CompressorBandControls::refreshBandButtonColors(juce::Button &band, juce::Button &colorSource)
+{
+    band.setColour(juce::TextButton::ColourIds::buttonOnColourId,
+                   colorSource.findColour(juce::TextButton::ColourIds::buttonOnColourId));
+    band.setColour(juce::TextButton::ColourIds::buttonColourId,
+                   colorSource.findColour(juce::TextButton::ColourIds::buttonOnColourId));
+    band.repaint();
+}
+
+void CompressorBandControls::resetActiveBandColors()
+{
+    activeBand->setColour(juce::TextButton::ColourIds::buttonOnColourId, juce::Colour(ColorPalette::Accent));
+    activeBand->setColour(juce::TextButton::ColourIds::buttonColourId, juce::Colour(ColorPalette::Secondary));
+    activeBand->repaint();
+}
+
+void CompressorBandControls::updateBandSelectButtonStates()
+{
+    using namespace Params;
+    
+    std::vector<std::array<Names, 3>> paramsToCheck
+    {
+        {Names::Solo_Low_Band, Names::Mute_Low_Band, Names::Bypassed_Low_Band},
+        {Names::Solo_Mid_Band, Names::Mute_Mid_Band, Names::Bypassed_Mid_Band},
+        {Names::Solo_High_Band, Names::Mute_High_Band, Names::Bypassed_High_Band}
+    };
+    
+    const auto& params = GetParams();
+    auto paramHelper = [&params, this](const auto& name)
+    {
+        return dynamic_cast<juce::AudioParameterBool*>(&getParam(apvts, params, name));
+    };
+    
+    for (size_t i = 0; i < paramsToCheck.size(); ++i)
+    {
+        auto& list = paramsToCheck[i];
+        
+        auto* bandButton =  (i == 0) ?  &lowBand :
+                            (i == 1) ?  &midBand :
+                                        &highBand;
+        
+        if (auto* solo = paramHelper(list[0]);
+            solo->get())
+        {
+            refreshBandButtonColors(*bandButton, soloButton);
+        }
+        else if (auto* mute = paramHelper(list[1]);
+                 mute->get())
+        {
+            refreshBandButtonColors(*bandButton, muteButton);
+        }
+        else if (auto* bypass = paramHelper(list[2]);
+                 bypass->get())
+        {
+            refreshBandButtonColors(*bandButton, bypassButton);
+        }
+    }
+    
 }
 
 void CompressorBandControls::updateSliderEnablements()
@@ -198,6 +296,9 @@ void CompressorBandControls::updateAttachments()
                 Names::Solo_Low_Band,
                 Names::Mute_Low_Band
             };
+            
+            activeBand = &lowBand;
+            
             break;
         }
         case Mid:
@@ -212,6 +313,9 @@ void CompressorBandControls::updateAttachments()
                 Names::Solo_Mid_Band,
                 Names::Mute_Mid_Band
             };
+            
+            activeBand = &midBand;
+            
             break;
         }
         case High:
@@ -226,6 +330,9 @@ void CompressorBandControls::updateAttachments()
                 Names::Solo_High_Band,
                 Names::Mute_High_Band
             };
+            
+            activeBand = &highBand;
+            
             break;
         }
     }
@@ -277,8 +384,8 @@ void CompressorBandControls::updateAttachments()
     ratioSlider.changeParam(ratioParam);
     
     auto makeAttachmentHelper = [&apvts = this->apvts, &params](auto& attachment,
-                                                  const auto& name,
-                                                  auto& slider)
+                                                                const auto& name,
+                                                                auto& slider)
     {
         makeAttachment(attachment, apvts, params, name, slider);
     };

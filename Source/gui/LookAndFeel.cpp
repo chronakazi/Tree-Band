@@ -136,7 +136,10 @@ void LookAndFeel::drawToggleButton(juce::Graphics &g,
         const int cornerSize = 4;
         
 //        button color
-        g.setColour(buttonIsOn ? juce::Colour(ColorPalette::Accent) : juce::Colour(ColorPalette::Secondary));
+        g.setColour(buttonIsOn ? 
+                    toggleButton.findColour(TextButton::ColourIds::buttonOnColourId) :
+                    toggleButton.findColour(TextButton::ColourIds::buttonColourId));
+        
         g.fillRoundedRectangle(bounds.toFloat(), cornerSize);
         
 //        button text color
